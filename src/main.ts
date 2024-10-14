@@ -1,5 +1,6 @@
 import * as core from '@actions/core'
-import { wait } from './wait'
+import * as github from '@actions/github'
+import { readFileSync } from 'fs'
 
 /**
  * The main function for the action.
@@ -7,18 +8,29 @@ import { wait } from './wait'
  */
 export async function run(): Promise<void> {
   try {
-    const ms: string = core.getInput('milliseconds')
+    const prNumber = github.context.payload.pull_request?.number
+    if (!prNumber) {
+      return
+    }
+    const reviewer = readFileSync('REVIEWERS', 'utf8').trim()
+    if (!reviewer) {
+      core.setFailed('No reviewer found in REVIEWERS file')
+      return
+    }
 
-    // Debug logs are only output if the `ACTIONS_STEP_DEBUG` secret is true
-    core.debug(`Waiting ${ms} milliseconds ...`)
-
-    // Log the current timestamp, wait, then log the new timestamp
-    core.debug(new Date().toTimeString())
-    await wait(parseInt(ms, 10))
-    core.debug(new Date().toTimeString())
-
-    // Set outputs for other workflow steps to use
-    core.setOutput('time', new Date().toTimeString())
+    const githubToken = core.getInput('github-token')
+    // TODO: Check if GitHub token is actually needed. It is not used in https://github.com/octokit/request-action/blob/main/index.js
+    const octokit = github.getOctokit(githubToken)
+    const reviews = await octokit.rest.pulls.listReviews({
+      owner: github.context.repo.owner,
+      repo: github.context.repo.repo,
+      pull_number: prNumber
+    })
+    const review = reviews.data.find(review => review.user?.login === reviewer)
+    if (!review || review.state !== 'APPROVED') {
+      core.setFailed(`Reviewer ${reviewer} needs to approve the PR`)
+      return
+    }
   } catch (error) {
     // Fail the workflow run if an error occurs
     if (error instanceof Error) core.setFailed(error.message)
