@@ -28,8 +28,10 @@ export async function run(): Promise<void> {
     })
     let approved = false
     core.info(`Found ${reviews.data.length} reviews`)
+    console.log(`Found ${reviews.data.length} reviews`)
     reviews.data.forEach(review => {
       core.info(`Review: ${review.user?.login} ${review.state} ${review.submitted_at}`)
+      console.log(`Review: ${review.user?.login} ${review.state} ${review.submitted_at}`)
       if (review.user?.login === reviewer && review.state === 'APPROVED') {
         core.info(`Reviewer ${reviewer} has approved the PR at ${review.submitted_at}`)
         approved = true
