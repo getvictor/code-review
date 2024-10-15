@@ -26,8 +26,14 @@ export async function run(): Promise<void> {
       repo: github.context.repo.repo,
       pull_number: prNumber
     })
-    const review = reviews.data.find(review => review.user?.login === reviewer)
-    if (!review || review.state !== 'APPROVED') {
+    let approved = false
+    reviews.data.forEach(review => {
+      if (review.user?.login === reviewer && review.state === 'APPROVED') {
+        core.info(`Reviewer ${reviewer} has approved the PR at ${review.submitted_at}`)
+        approved = true
+      }
+    })
+    if (!approved) {
       core.setFailed(`Reviewer ${reviewer} needs to approve the PR`)
       return
     }
