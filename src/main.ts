@@ -1,6 +1,5 @@
 import * as core from '@actions/core'
 import * as github from '@actions/github'
-import { Octokit } from '@octokit/action'
 import { readFileSync } from 'fs'
 
 /**
@@ -19,10 +18,8 @@ export async function run(): Promise<void> {
       return
     }
 
-    // const githubToken = core.getInput('github-token')
-    // TODO: Check if GitHub token is actually needed. It is not used in https://github.com/octokit/request-action/blob/main/index.js
-    // const octokit = github.getOctokit(githubToken)
-    const octokit = new Octokit()
+    const githubToken = core.getInput('github-token')
+    const octokit = github.getOctokit(githubToken)
     const reviews = await octokit.rest.pulls.listReviews({
       owner: github.context.repo.owner,
       repo: github.context.repo.repo,
