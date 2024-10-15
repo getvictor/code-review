@@ -12,10 +12,6 @@ inputs:
   github-token:
     description: 'GitHub secret token'
     required: true
-  milliseconds:
-    description: 'Your input description here'
-    required: true
-    default: '1000'
 
 runs:
   using: node20
