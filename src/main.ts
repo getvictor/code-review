@@ -1,5 +1,6 @@
 import * as core from '@actions/core'
 import * as github from '@actions/github'
+import { Octokit } from '@octokit/action'
 import { readFileSync } from 'fs'
 
 /**
@@ -18,28 +19,21 @@ export async function run(): Promise<void> {
       return
     }
 
-    const githubToken = core.getInput('github-token')
+    // const githubToken = core.getInput('github-token')
     // TODO: Check if GitHub token is actually needed. It is not used in https://github.com/octokit/request-action/blob/main/index.js
-    const octokit = github.getOctokit(githubToken)
+    // const octokit = github.getOctokit(githubToken)
+    const octokit = new Octokit()
     const reviews = await octokit.rest.pulls.listReviews({
       owner: github.context.repo.owner,
       repo: github.context.repo.repo,
       pull_number: prNumber
     })
     let approved = false
-    let summary = ''
-    core.info(`Found ${reviews.data.length} reviews`)
-    summary = summary + `Found ${reviews.data.length} reviews\n`
     reviews.data.forEach(review => {
-      core.info(`Review: ${review.user?.login} ${review.state} ${review.submitted_at}`)
-      summary = summary + `Review: ${review.user?.login} ${review.state} ${review.submitted_at}\n`
       if (review.user?.login === reviewer && review.state === 'APPROVED') {
-        summary = summary + `Reviewer ${reviewer} has approved the PR at ${review.submitted_at}\n`
-        core.info(`Reviewer ${reviewer} has approved the PR at ${review.submitted_at}`)
         approved = true
       }
     })
-    await core.summary.addHeading('Summary').addDetails('details', summary).write()
     if (!approved) {
       core.setFailed(`Reviewer ${reviewer} needs to approve the PR`)
       return
